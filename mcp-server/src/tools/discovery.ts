@@ -1,0 +1,108 @@
+import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { AGENT_OPS, FRAME_PRESETS, WIDGET_KINDS } from '../lib/agent.js';
+import { CONNECT_URL, type LiveBridge } from '../lib/bridge.js';
+import { MCP_SERVER_NAME, MCP_SERVER_VERSION } from '../lib/version.js';
+
+// Shape words an agent can write inside `[...]` attributes (grammar §5.1).
+const SHAPE_WORDS = [
+  'rect', 'rounded', 'circle', 'ellipse', 'diamond', 'cylinder', 'hexagon', 'cloud',
+  'doc', 'note', 'parallelogram', 'person', 'queue', 'component', 'browser', 'mobile',
+  'triangle', 'trapezoid', 'venn', 'speech', 'comment', 'star', 'check-circle',
+  'cross-circle', 'heart', 'bolt', 'bookmark', 'bar', 'prism', 'tag', 'chevron',
+  'octagon', 'cube', 'target', 'page', 'half-round', 'callout-stack', 'layer-stack',
+  'folder', 'panel', 'brace', 'bracket', 'numbered-circle', 'list-card', 'pin',
+  'arrow-up', 'arrow-down', 'arrow-left', 'arrow-right', 'plus', 'stadium',
+];
+
+const EDGE_STYLES = [
+  { syntax: '->', usage: 'Default directed edge.' },
+  { syntax: 'A : label -> B', usage: 'Edge with a label (or `A -> B : label`).' },
+  { syntax: '-->', usage: 'Dashed / secondary flow.' },
+  { syntax: '<->', usage: 'Bidirectional.' },
+  { syntax: '--', usage: 'Undirected.' },
+  { syntax: '->>', usage: 'Async (sequence messages).' },
+];
+
+const FAMILIES = ['flowchart', 'architecture', 'sequence', 'state', 'erd', 'class', 'gitgraph', 'mindmap', 'chart', 'wireframe'];
+
+const STATIC_TOOLS = [
+  'validate_openflow_dsl',
+  'analyze_codebase',
+  'discover_architecture',
+  'drift_report',
+  'explain_element',
+  'list_starter_templates',
+  'get_starter_template',
+  'list_diagram_node_types',
+  'server_info',
+  'openflow_create',
+  'openflow_open',
+  'openflow_save',
+  'whoami',
+];
+
+export function registerDiscoveryTools(server: McpServer, bridge: Pick<LiveBridge, 'status' | 'retryPort'>): void {
+  server.registerTool(
+    'list_diagram_node_types',
+    {
+      title: 'List OpenFlow DSL shapes, families and edge styles',
+      description:
+        'Quick reference for the OpenFlow DSL vocabulary: family names, shape words, edge arrows, and the wireframe controls and screen frames. ' +
+        'Call get_syntax for the full grammar.',
+    },
+    async () => ({
+      content: [
+        {
+          type: 'text' as const,
+          text: JSON.stringify({
+            families: FAMILIES, shapeWords: SHAPE_WORDS, edgeStyles: EDGE_STYLES,
+            wireframe: { controls: WIDGET_KINDS, frames: FRAME_PRESETS },
+          }, null, 2),
+        },
+      ],
+    })
+  );
+
+  server.registerTool(
+    'server_info',
+    {
+      title: 'Server info',
+      description:
+        'Return the server version and the tools, resources and prompts it serves. ' +
+        'Useful when debugging client connections.',
+    },
+    async () => {
+      await bridge.retryPort();
+      return {
+        content: [
+          {
+            type: 'text' as const,
+            text: JSON.stringify(
+              {
+                name: MCP_SERVER_NAME,
+                version: MCP_SERVER_VERSION,
+                localFirst: true,
+                bridge: bridge.status(),
+                modes: [`live-editor (the user pairs a tab at ${CONNECT_URL})`, 'file (.openflow.json)'],
+                tools: [...STATIC_TOOLS, ...AGENT_OPS.map(({ name }) => name)].sort(),
+                resources: [
+                  'openflowkit://docs/grammar',
+                  'openflowkit://templates',
+                  'openflowkit://templates/{name}',
+                  'openflowkit://icons',
+                  'openflowkit://icons/{provider}',
+                ],
+                prompts: [
+                  'flowchart_from_description',
+                  'architecture_from_codebase',
+                ],
+              },
+              null,
+              2
+            ),
+          },
+        ],
+      };
+    }
+  );
+}

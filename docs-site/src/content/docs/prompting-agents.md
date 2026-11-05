@@ -1,0 +1,69 @@
+---
+title: Prompting agents
+description: How to ask an MCP client or a bring-your-own-key model for a diagram that compiles.
+---
+
+The two agent paths — [MCP](/mcp-server/) and [BYOK](/ai-generation/) — both end in OpenFlow
+DSL. What you ask for decides whether the result is usable.
+
+## With MCP tools available
+
+Let the client do the work in order: read the syntax, write the DSL, validate it, then create
+the diagram. A prompt that names the tools gets a better result than one that just describes a
+picture:
+
+```text
+Read the OpenFlow grammar, then create a checkout flow with a promo-code
+branch. Validate the DSL before creating it, and screenshot the result.
+```
+
+In live mode the tools act on the document you see, so ask for changes in terms of what exists
+(`the frame on the active page`, `the boxes I selected`) and the client will call
+`get_document`, `get_diagram` or `list_diagrams` first.
+`get_document` also returns the ids of the shapes you have selected on the page you are
+looking at, in its `selection` field, so "restyle the boxes I selected" or "explain what I
+selected" needs no ids from you.
+
+If you moved, restyled or renamed things on the canvas and then ask for a change in text,
+say "keep my canvas edits". `get_diagram` lists them (`canvasEdits`) with the text that
+keeps each one, and `update_diagram` reports anything it had to drop (`discarded`).
+
+## Give the agent the skill
+
+[`skills/openflowkit/SKILL.md`](https://github.com/openflowkit/openflowkit/blob/main/skills/openflowkit/SKILL.md)
+is one page an agent reads once: when a diagram is worth drawing, Mermaid or DSL, which tools
+to call, and to save a `.openflow.json` beside the code. In Claude Code, copy it into
+`~/.claude/skills/openflowkit/`. The app serves the same text at `/llms.txt`.
+
+## With a bring-your-own-key model
+
+The assistant already sends the grammar and the frame you are editing, so the prompt should say
+what the diagram *means*, not what syntax to use:
+
+- name the family if you care (a sequence diagram, a state machine, a mind map);
+- list the actors and systems, and the direction of the important flows;
+- describe the branches and failure paths — they are the part models skip;
+- say what the audience is, so detail level is right.
+
+## What helps every time
+
+- **One family per request.** Asking for "an architecture diagram and a sequence diagram" gets
+  you one of them, badly.
+- **Concrete names.** `Checkout API -> Payments`, not `service -> service`.
+- **Ask for a review step.** `Validate before creating` for MCP; the BYOK path already shows a
+  proposal you accept or reject.
+- **Iterate in the text.** After the diagram lands, edit the DSL in the code panel; regenerating
+  is faster than re-prompting.
+
+## What not to ask for
+
+- Manual coordinates. Layout is computed; use `pin: x,y` only when one node truly has to sit
+  in a fixed place.
+- Features that do not exist: real-time collaboration, embedded viewers, slide decks,
+  camera paths. Ask for what the pages of this site describe.
+
+## Where to go next
+
+- [MCP Server](/mcp-server/) — the tool surface, with arguments.
+- [AI generation](/ai-generation/) — the key-in-browser path.
+- [OpenFlow DSL](/openflow-dsl/) — the language both paths write.

@@ -1,0 +1,17 @@
+{
+  "name": "Arcline",
+  "short_name": "Arcline",
+  "description": "Arcline is an open-source, local-first diagram canvas: draw it, write it as code, or hand it to your AI agent.",
+  "start_url": "/index.html#/home",
+  "display": "standalone",
+  "background_color": "#f7f7f5",
+  "theme_color": "#2E90FA",
+  "icons": [
+    {
+      "src": "/Logo_arcline.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

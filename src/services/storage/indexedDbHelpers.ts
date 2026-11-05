@@ -1,0 +1,59 @@
+import { openFlowPersistenceDatabase } from './indexedDbSchema';
+
+export function requestToPromise<T>(request: IDBRequest<T>): Promise<T> {
+  return new Promise((resolve, reject) => {
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error ?? new Error('IndexedDB request failed.'));
+  });
+}
+
+export function getIndexedDbFactory(): IDBFactory | null {
+  if (typeof indexedDB === 'undefined') return null;
+  return indexedDB;
+}
+
+export async function withDatabase<T>(handler: (database: IDBDatabase) => Promise<T>): Promise<T> {
+  const indexedDbFactory = getIndexedDbFactory();
+  if (!indexedDbFactory) {
+    throw new Error('IndexedDB is not available.');
+  }
+
+  const database = await openFlowPersistenceDatabase(indexedDbFactory);
+  try {
+    return await handler(database);
+  } finally {
+    database.close();
+  }
+}
+
+export async function getRecord<T>(
+  database: IDBDatabase,
+  storeName: string,
+  id: string
+): Promise<T | null> {
+  const transaction = database.transaction(storeName, 'readonly');
+  const store = transaction.objectStore(storeName);
+  const request = store.get(id) as IDBRequest<T | undefined>;
+  const result = await requestToPromise(request);
+  return result ?? null;
+}
+
+export async function putRecord<T>(
+  database: IDBDatabase,
+  storeName: string,
+  value: T
+): Promise<void> {
+  const transaction = database.transaction(storeName, 'readwrite');
+  const store = transaction.objectStore(storeName);
+  await requestToPromise(store.put(value));
+}
+
+export async function deleteRecord(
+  database: IDBDatabase,
+  storeName: string,
+  id: string
+): Promise<void> {
+  const transaction = database.transaction(storeName, 'readwrite');
+  const store = transaction.objectStore(storeName);
+  await requestToPromise(store.delete(id));
+}

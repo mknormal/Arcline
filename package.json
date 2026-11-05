@@ -1,0 +1,95 @@
+{
+  "name": "arcline",
+  "private": true,
+  "version": "2.1.0",
+  "description": "Architecture diagrams you draw, write as code, or hand to your agent.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/openflowkit/openflowkit.git"
+  },
+  "bugs": "https://github.com/openflowkit/openflowkit/issues",
+  "type": "module",
+  "workspaces": [
+    "docs-site",
+    "mcp-server"
+  ],
+  "homepage": "https://openflowkit.com",
+  "engines": {
+    "node": ">=22.22.0"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "typecheck": "tsc -b --pretty false",
+    "build:analyze": "npm run build && node scripts/analyze-bundle.mjs",
+    "bundle:check": "node scripts/check-bundle-budget.mjs",
+    "icons:tighten": "node scripts/tighten-svg-viewboxes.mjs",
+    "build:ci": "npm run build && npm run bundle:check",
+    "test:ci": "npm run test -- --run && npm run build:ci",
+    "verify": "npm run typecheck && npm run lint && npm run test -- --run && npm --prefix mcp-server run test:run && tsc --noEmit -p mcp-server && playwright test --grep @gate --headed",
+    "e2e": "playwright test",
+    "e2e:headed": "playwright test --headed",
+    "e2e:ci": "CI=1 playwright test --project=chromium --grep-invert @local",
+    "preview": "vite preview",
+    "test": "vitest",
+    "lint": "eslint . --ext ts,tsx --ignore-pattern 'docs-site/**' --report-unused-disable-directives --max-warnings 0",
+    "build:docs": "npm run build --workspace docs-site",
+    "shape-pack:manifest": "node scripts/shape-pack/generate-shape-pack-manifest.mjs",
+    "shape-pack:validate": "node scripts/shape-pack/validate-shape-pack-manifests.mjs",
+    "shape-pack:intake-check": "node scripts/shape-pack/check-provider-intake.mjs",
+    "stress:generate": "tsx scripts/generate-stress-doc.ts",
+    "stress:open": "node scripts/open-stress-sheet.mjs",
+    "prepare": "node -e \"if (process.env.CI) process.exit(0)\" && husky || true",
+    "build:agent": "vite build -c vite.agent.config.ts",
+    "build:map-viewer": "vite build -c vite.map-viewer.config.ts",
+    "eval:agent": "npm --prefix mcp-server run eval:agent",
+    "skill:sync": "node scripts/sync-llms.mjs",
+    "eval:validity": "npm --prefix mcp-server run eval:validity",
+    "stats": "node scripts/stats.mjs"
+  },
+  "dependencies": {
+    "@tabler/icons-react": "^3.47.0",
+    "elkjs": "^0.11.0",
+    "gifenc": "^1.0.3",
+    "mediabunny": "^1.59.0",
+    "pixi.js": "8.18.1",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "react-router-dom": "^7.13.0",
+    "zod-to-json-schema": "^3.25.2"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.53.2",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@types/node": "^22.14.0",
+    "@types/react": "^19.2.13",
+    "@types/react-dom": "^19.2.3",
+    "@typescript-eslint/eslint-plugin": "^8.55.0",
+    "@typescript-eslint/parser": "^8.55.0",
+    "@vitejs/plugin-react": "^5.1.4",
+    "@vitest/coverage-v8": "^4.1.2",
+    "eslint": "^8.57.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "fake-indexeddb": "^6.2.5",
+    "husky": "^9.1.7",
+    "jsdom": "^28.0.0",
+    "lint-staged": "^17.6.0",
+    "tsx": "^4.22.3",
+    "typescript": "~5.8.2",
+    "vite": "^6.2.0",
+    "vitest": "^4.0.18",
+    "yaml": "2.9.1"
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "eslint --fix --max-warnings 0"
+    ]
+  },
+  "overrides": {
+    "zod": "3"
+  }
+}

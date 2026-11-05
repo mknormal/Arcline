@@ -1,0 +1,29 @@
+import type { Node } from '@/lib/reactflowCompat';
+
+type NodeWithParent = Node & {
+  parentId?: string;
+  extent?: Node['extent'];
+};
+
+interface SetNodeParentOptions {
+  constrainToParent?: boolean;
+}
+
+export function setNodeParent<T extends Node>(
+  node: T,
+  parentId: string,
+  options: SetNodeParentOptions = {}
+): T {
+  const nextNode = {
+    ...node,
+    parentId,
+  } as NodeWithParent;
+
+  if (options.constrainToParent) {
+    nextNode.extent = 'parent';
+  } else {
+    delete nextNode.extent;
+  }
+
+  return nextNode as T;
+}
